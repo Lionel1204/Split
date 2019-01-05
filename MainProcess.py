@@ -5,15 +5,41 @@ from OSSManager import OSSManager
 import Utils
 from configparser import ConfigParser
 from LoggingHelper import Logger
+import shutil
+import json
 
 _logger = Logger()
 
 def mainProcess(exId):
+  manifest = {}
   idPath = Utils.genMD5(exId)
   tempPath, remotePath, videoFilesArr = downloadVideos(idPath)
   for vf in videoFilesArr:
-    splitVideo(tempPath, vf)
+    count = splitVideo(tempPath, vf)
+    manifest[vf.split('.')[0]] = count
 
+  manifest["id"] = exId
+  maniPath = createManifest(idPath, manifest, tempPath)
+  uploadImages(idPath, tempPath, remotePath)
+  uploadManifest(idPath, maniPath, remotePath)
+  cleanTemp(tempPath)
+
+def createManifest(userId, manifest, tempPath):
+  filename = '{0}.json'.format(userId)
+  maniPath = os.path.join(tempPath, filename)
+  with open(maniPath, 'w') as jsonfile:
+    json.dump(manifest, jsonfile)
+  return maniPath
+
+def uploadManifest(userId, maniPath, ossPath):
+  om = OSSManager()
+  filename = '{0}.json'.format(userId)
+  uploadPath = os.path.join(ossPath, userId, filename)
+  om.uploadFile(uploadPath, maniPath)
+
+def cleanTemp(path):
+  if os.path.exists(path):
+    shutil.rmtree(path)
 
 def downloadVideos(idPath):
   om = OSSManager()
@@ -38,6 +64,17 @@ def downloadVideos(idPath):
 
   return tempPath, remotePath, videoFilesArr
 
+def uploadImages(userId, tempPath, ossPath):
+  om = OSSManager()
+  uploadPath = os.path.join(ossPath, userId)
+
+  for (dirpath, dirnames, filenames) in os.walk(tempPath):
+    for file in filenames:
+      if ".jpg" in file:
+        uploadFilePath = os.path.join(uploadPath, file)
+        localFilePath = os.path.join(tempPath, file)
+        om.uploadFile(uploadFilePath, localFilePath)
+
 def getVideoInfo():
   config = ConfigParser()
   config.read('./config.ini')
@@ -53,12 +90,13 @@ def splitVideo(path, fileName):
   count = 0
   while success:
     success, image = vidcap.read()
-    frameName = "frame_%d_%d.jpg".format(fileName.split('.')[0], count)
-    cv2.imwrite(frameName, image)  # save frame as JPEG file
+    frameName = "{0}_{1}.jpg".format(fileName.split('.')[0], count)
+    cv2.imwrite(os.path.join(path, frameName), image)  # save frame as JPEG file
     if cv2.waitKey(10) == 27:
       break
     count += 1
 
+  return count
 
 if __name__ == "__main__":
   if len(sys.argv) == 2:

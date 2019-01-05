@@ -52,6 +52,13 @@ class OSSManager(object):
                               part_size=10 * 1024 * 1024,
                               num_threads=3)
 
+  def uploadFile(self, path, localPath):
+    oss2.resumable_upload(self._bucket, path, localPath,
+                          store=oss2.ResumableDownloadStore(root='./tmp'),
+                          multipart_threshold=20 * 1024 * 1024,
+                          part_size=10 * 1024 * 1024,
+                          num_threads=3)
+
   def cleanDirs(self, key):
       return ""
 
