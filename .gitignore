@@ -105,3 +105,10 @@ venv.bak/
 
 #idea 
 .idea/
+
+#cred
+cred.json
+
+# temp
+tmp/
+temp/*
