@@ -16,7 +16,7 @@ def mainProcess(exId):
   tempPath, remotePath, videoFilesArr = downloadVideos(idPath)
   for vf in videoFilesArr:
     count = splitVideo(tempPath, vf)
-    manifest[vf.split('.')[0]] = count
+    manifest[vf.split('.')[0]] = count - 1
 
   manifest["id"] = exId
   maniPath = createManifest(idPath, manifest, tempPath)
