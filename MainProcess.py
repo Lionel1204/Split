@@ -12,8 +12,11 @@ _logger = Logger()
 
 def mainProcess(exId):
   manifest = {}
-  idPath = Utils.genMD5(exId)
+  idPath = exId
+  if exId != 'example':
+    idPath = Utils.genMD5(exId)
   tempPath, remotePath, videoFilesArr = downloadVideos(idPath)
+
   for vf in videoFilesArr:
     count = splitVideo(tempPath, vf)
     manifest[vf.split('.')[0]] = count - 1
